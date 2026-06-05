@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ai-monitoring-ops
+  datasource:
+    url: jdbc:postgresql://localhost:5432/aiops
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+    show-sql: true
+
+openrouter:
+  api-key: ${OPENROUTER_API_KEY}
+  base-url: https://openrouter.ai/api/v1/chat/completions
+  model: nvidia/nemotron-3-super-120b-a12b:free
+
+
+langchain4j:
+  qdrant:
+    with-vectors: true
+prometheus:
+  url: http://129.159.224.174:9090
