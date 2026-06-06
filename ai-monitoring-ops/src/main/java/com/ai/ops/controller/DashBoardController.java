@@ -22,6 +22,7 @@ public class DashBoardController {
     private final PrometheusService prometheusService;
     private final MetricsHistoryService metricsHistoryService;
     private final AIDecisionAuditService aiDecisionAuditService;
+    private final HealthService healthService;
 
     @GetMapping("/scaling-history")
     public Map<String, Object> dashboard() {
@@ -37,10 +38,9 @@ public class DashBoardController {
 
         String lastAction = "NONE";
 
-        return DashboardSummary.builder().runningPods(runningPods).
+        return DashboardSummary.builder().podDetails(prometheusService.getPodDetails()).
                 cpuPercent(prometheusService.getOrderServiceCpu()).
                 memoryMb(prometheusService.getOrderServiceMemoryMb()).
-                restartCount(prometheusService.getRestartCount()).
                 alerts(alertService.getAlerts().size()).lastAiAction(lastAction).build();
     }
 
@@ -64,14 +64,14 @@ public class DashBoardController {
         String lastAction = "NONE";
 
         DashboardSummary summary =
-                DashboardSummary.builder().runningPods(runningPods).
+                DashboardSummary.builder().podDetails(prometheusService.getPodDetails()).
                         cpuPercent(prometheusService.getOrderServiceCpu()).
                         memoryMb(prometheusService.getOrderServiceMemoryMb()).
-                        restartCount(prometheusService.getRestartCount()).
                         alerts(alertService.getAlerts().size()).
                         lastAiAction(lastAction).build();
 
         return DashboardFullResponse.builder().summary(summary).
+                health(healthService.getHealth()).
                 alerts(alertService.getAlerts()).
                 scalingHistory(autoScalingService.getHistory()).
                 aiDecisions(aiDecisionAuditService.getAll()).

@@ -34,16 +34,14 @@ public class AIDecisionService {
          {
            "action":"SCALE_UP",
            "replicas":5,
-           "reason":"CPU utilization above 80 percent"
+           "reason":"CPU utilization above 80 percent",
+           "confidence":0.9
          }
 
          Metrics:
          """ + metrics;
         log.info("Sending prompt to OpenRouter: {}", prompt);
-        System.out.println(chatClient.prompt()
-                .user(prompt)
-                .call()
-                .content());
-        return openRouterService.askOpenRouter(prompt);
+        return chatClient.prompt().user(prompt).call().content();
+       // return openRouterService.askOpenRouter(prompt);
     }
 }

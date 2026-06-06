@@ -22,4 +22,6 @@ public class DashboardFullResponse {
     private List<AIDecisionEntity> aiDecisions;
 
     private List<MetricSnapshotEntity> metricsHistory;
+    private HealthResponse health;
+
 }

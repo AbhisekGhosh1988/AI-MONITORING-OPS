@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -22,7 +23,14 @@ public class MonitoringService {
     private final ObjectMapper objectMapper;
     private final PrometheusService prometheusService;
     private final AIDecisionAuditService aiAuditService;
+    private Double lastCpuPercent;
+    private Double lastMemoryMb;
+    private Integer lastRestartCount;
+    private Integer lastRunningPods;
 
+    private LocalDateTime lastAiExecutionTime;
+
+    private static final int AI_COOLDOWN_MINUTES = 5;
     public void monitorCluster() {
 
         try {
@@ -52,15 +60,28 @@ public class MonitoringService {
                     restartCount(restartCount).build();
             String metricsJson = objectMapper.writeValueAsString(metrics);
             log.info("Collected Metrics: {}", metricsJson);
+            if (!shouldInvokeAI(cpuPercent, memoryMb, restartCount, (int) runningPods, (int) failedPods)) {
+                log.info("Cluster healthy. Skipping AI analysis.");
+                updatePreviousMetrics(cpuPercent, memoryMb, restartCount, (int) runningPods);
+                return;
+            }
+
+            if (aiCooldownActive()) {
+                log.info("AI cooldown active. Skipping AI call.");
+                updatePreviousMetrics(cpuPercent, memoryMb, restartCount, (int) runningPods);
+                return;
+            }
+            log.info("AI analysis triggered");
             String aiResponse = aiDecisionService.analyze(metricsJson);
+            lastAiExecutionTime = LocalDateTime.now();
             log.info("AI Response: {}", aiResponse);
             AIDecision decision = AiResponseParser.parse(aiResponse);
             log.info("Parsed AI Decision: {}", objectMapper.writeValueAsString(decision));
-            //AIDecision decision = objectMapper.readValue(aiResponse, AIDecision.class);
-
             aiAuditService.saveDecision(decision.getAction(), decision.getReplicas(),
                     decision.getReason(), decision.getConfidence(), false);
+
             executeDecision(decision);
+            updatePreviousMetrics(cpuPercent, memoryMb, restartCount, (int) runningPods);
 
         } catch (Exception e) {
             log.error("Monitoring failed", e);
@@ -132,5 +153,43 @@ public class MonitoringService {
             log.error("Decision execution failed", e);
             alertService.createAlert("ERROR", e.getMessage());
         }
+    }
+    private boolean shouldInvokeAI(double cpuPercent, double memoryMb, int restartCount, int runningPods, int failedPods) {
+
+        // Critical conditions
+        if (failedPods > 0) {return true;}
+        if (restartCount > 0 && (lastRestartCount == null || restartCount > lastRestartCount)) {return true;}
+        if (cpuPercent > 70) {return true;}
+        if (memoryMb > 1024) {return true;}
+        if (runningPods < 2) {return true;}
+        // First run
+        if (lastCpuPercent == null) {return true;}
+
+        boolean cpuChanged = Math.abs(cpuPercent - lastCpuPercent) > 20;
+
+        boolean memoryChanged = Math.abs(memoryMb - lastMemoryMb) > 500;
+
+        boolean podCountChanged = !runningPodsEquals(runningPods);
+
+        return cpuChanged || memoryChanged || podCountChanged;
+    }
+
+    private boolean runningPodsEquals(int runningPods) {
+        return lastRunningPods != null && lastRunningPods == runningPods;
+    }
+
+    private boolean aiCooldownActive() {
+        if (lastAiExecutionTime == null) {
+            return false;
+        }
+        return lastAiExecutionTime.plusMinutes(AI_COOLDOWN_MINUTES).isAfter(LocalDateTime.now());
+    }
+
+    private void updatePreviousMetrics(double cpuPercent, double memoryMb, int restartCount, int runningPods) {
+
+        this.lastCpuPercent = cpuPercent;
+        this.lastMemoryMb = memoryMb;
+        this.lastRestartCount = restartCount;
+        this.lastRunningPods = runningPods;
     }
 }

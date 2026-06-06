@@ -11,7 +11,9 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -40,16 +42,59 @@ public class PrometheusService {
     }
 
     public double getOrderServiceCpu() {
-        return query("sum(rate(process_cpu_usage{application=\"order-service\"}[5m])) * 100");
+        double cpuPercent = query(
+                "process_cpu_usage{application=\"order-service\"}"
+        ) * 100;
+
+        cpuPercent = Math.round(cpuPercent * 100.0) / 100.0;
+        return cpuPercent;
     }
 
     public double getOrderServiceMemoryMb() {
         double bytes = query("sum(jvm_memory_used_bytes{application=\"order-service\",area=\"heap\"})");
         return bytes / 1024 / 1024;
     }
+    public Map<String, Integer> getPodDetails(){
+        Map<String, Integer> map = new HashMap<>();
+        map.put("failedPods", getFailedPods());
+        map.put("restartPodCount", getPodRestartCount());
+        map.put("crashBackPodCount", getPodCrashBackCount());
+        map.put("runningPods", getRunningPods());
 
-    public int getRestartCount() {
-        return (int) query("sum(kube_pod_container_status_restarts_total{pod=~\"order-service.*\"})");
+        return map;
+    }
+    public int getFailedPods(){
+        return (int) query("sum by (pod) (\n" +
+                "  max_over_time(\n" +
+                "    kube_pod_status_phase{\n" +
+                "      phase=\"Failed\",\n" +
+                "      pod=~\"order-service.*\"\n" +
+                "    }[168h]\n" +
+                "  )\n" +
+                ")");
+    }
+    public int getPodRestartCount() {
+        return (int) query("sum by (pod) (\n" +
+                "  increase(\n" +
+                "    kube_pod_container_status_restarts_total{\n" +
+                "      pod=~\"order-service.*\"\n" +
+                "    }[168h]\n" +
+                "  )\n" +
+                ")");
+    }
+    public int getPodCrashBackCount() {
+        return (int) query("sum by (pod) (\n" +
+                "  increase(\n" +
+                "    kube_pod_container_status_restarts_total{\n" +
+                "      pod=~\"order-service.*\"\n" +
+                "    }[168h]\n" +
+                "  )\n" +
+                ")");
+    }
+
+    public Integer getRunningPods() {
+        return (int)
+                query("count(kube_pod_status_phase{" + "phase=\"Running\"," + "pod=~\"order-service.*\"" + "})");
     }
 
     public PrometheusResponse getHeapByPod() {

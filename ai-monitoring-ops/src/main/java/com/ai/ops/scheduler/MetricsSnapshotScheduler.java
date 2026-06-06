@@ -28,7 +28,7 @@ public class MetricsSnapshotScheduler {
 
             historyService.saveSnapshot(prometheusService.getOrderServiceCpu(),
                     prometheusService.getOrderServiceMemoryMb(), runningPods,
-                    prometheusService.getRestartCount());
+                    prometheusService.getPodRestartCount());
 
         } catch (Exception e) {
             e.printStackTrace();
