@@ -3,6 +3,8 @@ package com.ai.ops.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -10,7 +12,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AIDecisionService {
 
-    private final OpenRouterService openRouterService;
+    private final   OpenRouterService openRouterService;
+    private final ChatClient chatClient;
 
     public String analyze(String metrics) {
 
@@ -37,6 +40,10 @@ public class AIDecisionService {
          Metrics:
          """ + metrics;
         log.info("Sending prompt to OpenRouter: {}", prompt);
+        System.out.println(chatClient.prompt()
+                .user(prompt)
+                .call()
+                .content());
         return openRouterService.askOpenRouter(prompt);
     }
 }

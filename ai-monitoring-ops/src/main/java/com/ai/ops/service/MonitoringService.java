@@ -3,10 +3,13 @@ package com.ai.ops.service;
 import com.ai.ops.model.AIDecision;
 import com.ai.ops.model.ClusterMetrics;
 import com.ai.ops.model.LastDecisionResponse;
+import com.ai.ops.util.AiResponseParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +31,12 @@ public class MonitoringService {
                     query("count(kube_pod_status_phase{" + "phase=\"Running\"," + "pod=~\"order-service.*\"" + "})");
 
             long failedPods = (long) prometheusService.
-                    query("count(kube_pod_status_phase{" + "phase=\"Failed\"," + "pod=~\"order-service.*\"" + "})");
+                    query("count(\n" +
+                            "  kube_pod_status_phase{\n" +
+                            "    phase=\"Failed\",\n" +
+                            "    pod=~\"order-service.*\"\n" +
+                            "  } == 1\n" +
+                            ")");
 
             int restartCount = (int) prometheusService.
                     query("sum(kube_pod_container_status_restarts_total{" + "pod=~\"order-service.*\"" + "})");
@@ -46,7 +54,9 @@ public class MonitoringService {
             log.info("Collected Metrics: {}", metricsJson);
             String aiResponse = aiDecisionService.analyze(metricsJson);
             log.info("AI Response: {}", aiResponse);
-            AIDecision decision = objectMapper.readValue(aiResponse, AIDecision.class);
+            AIDecision decision = AiResponseParser.parse(aiResponse);
+            log.info("Parsed AI Decision: {}", objectMapper.writeValueAsString(decision));
+            //AIDecision decision = objectMapper.readValue(aiResponse, AIDecision.class);
 
             aiAuditService.saveDecision(decision.getAction(), decision.getReplicas(),
                     decision.getReason(), decision.getConfidence(), false);

@@ -3,11 +3,11 @@ package com.ai.ops.controller;
 import com.ai.ops.model.ClusterMetrics;
 import com.ai.ops.model.TestMetricsRequest;
 import com.ai.ops.service.AIDecisionService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import tools.jackson.databind.ObjectMapper;
 
 @RestController
 @RequestMapping("/api/v1/test")

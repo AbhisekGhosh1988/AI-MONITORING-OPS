@@ -14,12 +14,16 @@ spring:
       ddl-auto: update
 
     show-sql: true
+  ai:
+    ollama:
+          base-url: http://localhost:11434
+          chat:
+            model: qwen2.5-coder:7b
 
 openrouter:
   api-key: ${OPENROUTER_API_KEY}
   base-url: https://openrouter.ai/api/v1/chat/completions
   model: nvidia/nemotron-3-super-120b-a12b:free
-
 
 langchain4j:
   qdrant:
