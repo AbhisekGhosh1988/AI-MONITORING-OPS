@@ -26,4 +26,10 @@ public class AlertService {
     public List<AlertEntity> getAlerts() {
         return repository.findAll();
     }
+    public List<AlertEntity> findByCreatedAtAfter() {
+        LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
+
+        // Fetch the data
+        return repository.findByCreatedAtAfter(oneHourAgo);
+    }
 }

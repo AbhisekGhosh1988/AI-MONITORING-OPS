@@ -72,7 +72,7 @@ public class DashBoardController {
 
         return DashboardFullResponse.builder().summary(summary).
                 health(healthService.getHealth()).
-                alerts(alertService.getAlerts()).
+                alerts(alertService.findByCreatedAtAfter()).
                 scalingHistory(autoScalingService.getHistory()).
                 aiDecisions(aiDecisionAuditService.getAll()).
                 metricsHistory(metricsHistoryService.getLatest100()).build();
