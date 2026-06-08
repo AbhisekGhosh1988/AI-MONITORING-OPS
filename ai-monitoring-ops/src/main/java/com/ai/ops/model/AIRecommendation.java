@@ -13,5 +13,5 @@ public class AIRecommendation {
 
     private String reason;
 
-    private Double confidence;
+    private Integer confidence;
 }

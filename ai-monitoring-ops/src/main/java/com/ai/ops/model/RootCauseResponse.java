@@ -5,18 +5,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
-public class AIDecision {
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class RootCauseResponse {
 
-    private String action;
-
-    private Integer replicas;
-
-    private String reason;
+    private String cause;
 
     private Integer confidence;
 
-    private List<String> reasons;
+    private String recommendation;
 }

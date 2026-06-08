@@ -1,8 +1,6 @@
 package com.ai.ops.controller;
 
-import com.ai.ops.model.DashboardFullResponse;
-import com.ai.ops.model.DashboardSummary;
-import com.ai.ops.model.PodStatusDto;
+import com.ai.ops.model.*;
 import com.ai.ops.service.*;
 import io.kubernetes.client.openapi.models.V1Pod;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 @RequiredArgsConstructor
 @RestController
-        @RequestMapping ("/dashboard")
+@RequestMapping ("/dashboard")
 public class DashBoardController {
 
     private final AlertService alertService;
@@ -23,6 +21,7 @@ public class DashBoardController {
     private final MetricsHistoryService metricsHistoryService;
     private final AIDecisionAuditService aiDecisionAuditService;
     private final HealthService healthService;
+    private final ClusterContextService clusterContextService;
 
     @GetMapping("/scaling-history")
     public Map<String, Object> dashboard() {

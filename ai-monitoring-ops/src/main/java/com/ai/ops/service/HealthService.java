@@ -1,6 +1,8 @@
 package com.ai.ops.service;
 
+import com.ai.ops.model.ClusterContext;
 import com.ai.ops.model.HealthResponse;
+import com.ai.ops.model.HealthScoreResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ public class HealthService {
     private final PrometheusService prometheusService;
     private final DataSource dataSource;
     private final AIDecisionService aiDecisionService;
+    private final ClusterContextService clusterContextService;
 
     public HealthResponse getHealth() {
 
@@ -68,5 +71,64 @@ public class HealthService {
         } catch (Exception e) {
             return "DOWN";
         }
+    }
+
+
+    public HealthScoreResponse calculate() {
+
+        ClusterContext context =
+                clusterContextService.buildContext();
+
+        int score = 100;
+
+        if (context.getCpu() > 90) {
+            score -= 25;
+        } else if (context.getCpu() > 75) {
+            score -= 15;
+        }
+
+        if (context.getMemory() > 90) {
+            score -= 25;
+        } else if (context.getMemory() > 75) {
+            score -= 15;
+        }
+
+        score -= Math.min(
+                (int) context.getRestartCount() * 2,
+                15
+        );
+
+        score -= Math.min(
+                (int) context.getAlerts() * 5,
+                20
+        );
+
+        score = Math.max(score, 0);
+
+        String status =
+                score >= 90 ? "Healthy"
+                        : score >= 70 ? "Warning"
+                          : "Critical";
+
+        return HealthScoreResponse.builder()
+                .score(score)
+                .status(status)
+                .summary(buildSummary(status))
+                .build();
+    }
+
+    private String buildSummary(String status) {
+
+        return switch (status) {
+
+            case "Healthy" ->
+                    "Cluster operating normally";
+
+            case "Warning" ->
+                    "Minor issues detected";
+
+            default ->
+                    "Immediate attention required";
+        };
     }
 }

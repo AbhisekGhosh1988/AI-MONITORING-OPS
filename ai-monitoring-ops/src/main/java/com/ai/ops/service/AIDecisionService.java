@@ -17,29 +17,34 @@ public class AIDecisionService {
 
     public String analyze(String metrics) {
 
-    String prompt = """
-         You are a Kubernetes Site Reliability Engineer.
-
-         Analyze the metrics.
-
-         Guidelines:
-
-         1. CPU > 80 and runningPods < 5 => SCALE_UP
-         2. CPU < 20 and runningPods > 1 => SCALE_DOWN
-         3. failedPods > 0 => ALERT
-         4. restartCount > 3 => ALERT
-
-         Return JSON only.
-
-         {
-           "action":"SCALE_UP",
-           "replicas":5,
-           "reason":"CPU utilization above 80 percent",
-           "confidence":0.9
-         }
-
-         Metrics:
-         """ + metrics;
+            String prompt = """
+                You are an expert Kubernetes Site Reliability Engineer.
+                
+                Analyze the cluster metrics and recommend an action.
+                
+                Possible actions:
+                
+                SCALE_UP
+                SCALE_DOWN
+                ALERT
+                NO_ACTION
+                
+                Return JSON only.
+                
+                {
+                  "action":"SCALE_UP",
+                  "replicas":5,
+                  "reason":"Short summary",
+                  "confidence":95,
+                  "reasons":[
+                      "CPU utilization exceeded threshold",
+                      "Memory usage increasing",
+                      "Traffic trend indicates growth"
+                  ]
+                }
+                
+                Metrics:
+    """ + metrics;
         log.info("Sending prompt to OpenRouter: {}", prompt);
         return chatClient.prompt().user(prompt).call().content();
        // return openRouterService.askOpenRouter(prompt);

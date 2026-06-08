@@ -3,6 +3,7 @@ package com.ai.ops.service;
 import com.ai.ops.model.PodStatusDto;
 import com.ai.ops.model.PrometheusResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -17,6 +18,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PrometheusService {
 
     private final RestTemplate restTemplate;
@@ -42,11 +44,24 @@ public class PrometheusService {
     }
 
     public double getOrderServiceCpu() {
-        double cpuPercent = query(
-                "process_cpu_usage{application=\"order-service\"}"
-        ) * 100;
 
-        cpuPercent = Math.round(cpuPercent * 100.0) / 100.0;
+        double cpuPercent = query(
+                """
+                sum(
+                  rate(
+                    container_cpu_usage_seconds_total{
+                      pod=~"order-service.*"
+                    }[5m]
+                  )
+                ) * 100
+                """
+        );
+
+        cpuPercent =
+                Math.round(cpuPercent * 100.0) / 100.0;
+
+        log.info("CPU PERCENT = {}", cpuPercent);
+
         return cpuPercent;
     }
 

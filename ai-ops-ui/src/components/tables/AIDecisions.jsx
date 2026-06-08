@@ -70,8 +70,7 @@ const AIDecisions = ({ decisions = [] }) => {
               >
                 {decision.confidence
                   ? `${Math.round(
-                      decision.confidence *
-                        100
+                      decision.confidence
                     )}%`
                   : "-"}
               </td>

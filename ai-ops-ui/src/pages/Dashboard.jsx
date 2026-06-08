@@ -2,32 +2,84 @@ import { useEffect, useState } from "react";
 
 import Sidebar from "../components/layout/Sidebar";
 import Header from "../components/layout/Header";
+
 import MetricCard from "../components/cards/MetricCard";
 import RecommendationCard from "../components/cards/RecommendationCard";
+import HealthScoreCard from "../components/cards/HealthScoreCard";
+import RootCauseCard from "../components/cards/RootCauseCard";
+import ForecastCard from "../components/cards/ForecastCard";
+import AnomalyCard from "../components/cards/AnomalyCard";
+import ExecutiveSummaryCard from "../components/cards/ExecutiveSummaryCard";
+
 import CpuChart from "../components/charts/CpuChart";
 import MemoryChart from "../components/charts/MemoryChart";
+
 import RecentAlerts from "../components/tables/RecentAlerts";
 import AIDecisions from "../components/tables/AIDecisions";
-import SystemHealth from "../components/tables/SystemHealth";
 import ScalingHistory from "../components/tables/ScalingHistory";
-import { getDashboardDetails } from "../services/dashboardService";
+import SystemHealth from "../components/tables/SystemHealth";
+
+import AIOpsAssistant from "../components/chat/AIOpsAssistant";
+
+import {
+  getDashboardDetails,
+  getHealthScore,
+  getRootCause,
+  getForecast,
+  getAnomalies,
+  getExecutiveSummary
+} from "../services/dashboardService";
 
 const Dashboard = () => {
+
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const [healthScore, setHealthScore] = useState(null);
+  const [rootCause, setRootCause] = useState(null);
+  const [forecast, setForecast] = useState(null);
+  const [anomalies, setAnomalies] = useState([]);
+  const [executiveSummary, setExecutiveSummary] = useState(null);
 
   useEffect(() => {
     loadDashboard();
   }, []);
 
   const loadDashboard = async () => {
+
     try {
-      const response = await getDashboardDetails();
-      setDashboardData(response);
+
+      const [
+        dashboard,
+        health,
+        root,
+        forecastData,
+        anomalyData,
+        summaryData
+      ] = await Promise.all([
+        getDashboardDetails(),
+        getHealthScore(),
+        getRootCause(),
+        getForecast(),
+        getAnomalies(),
+        getExecutiveSummary()
+      ]);
+
+      setDashboardData(dashboard);
+      setHealthScore(health);
+      setRootCause(root);
+      setForecast(forecastData);
+      setAnomalies(anomalyData);
+      setExecutiveSummary(summaryData);
+
     } catch (error) {
-      console.error("Dashboard API Error:", error);
+
+      console.error(error);
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
@@ -36,7 +88,7 @@ const Dashboard = () => {
       <div
         style={{
           color: "white",
-          padding: "40px",
+          padding: "40px"
         }}
       >
         Loading Dashboard...
@@ -49,7 +101,7 @@ const Dashboard = () => {
       <div
         style={{
           color: "white",
-          padding: "40px",
+          padding: "40px"
         }}
       >
         Failed to load dashboard data.
@@ -58,40 +110,54 @@ const Dashboard = () => {
   }
 
   const latestDecision =
-    dashboardData.aiDecisions?.[dashboardData.aiDecisions.length - 1] || null;
+    dashboardData.aiDecisions?.[
+      dashboardData.aiDecisions.length - 1
+    ] || null;
 
   return (
     <div className="app-layout">
+
       <Sidebar />
 
       <div className="main-content">
+
         <Header />
 
         <div className="dashboard-content">
-          <h1 className="dashboard-title">Dashboard</h1>
+
+          <h1 className="dashboard-title">
+            Dashboard
+          </h1>
 
           <p className="dashboard-subtitle">
             Real-time overview of your Kubernetes environment
           </p>
 
+          {/* Metrics */}
+
           <div className="metrics-grid">
+
             <MetricCard
               title="Running Pods"
-              value={dashboardData.summary.podDetails.runningPods}
+              value={
+                dashboardData.summary.podDetails.runningPods
+              }
               subtitle="Healthy Pods"
               color="#22c55e"
             />
 
             <MetricCard
               title="CPU Usage"
-              value={`${(dashboardData.summary.cpuPercent * 100).toFixed(0)}%`}
+              value={`${dashboardData.summary.cpuPercent.toFixed(0)}%`}
               subtitle="Current Usage"
               color="#ef4444"
             />
 
             <MetricCard
               title="Memory Usage"
-              value={`${Math.round(dashboardData.summary.memoryMb)} MB`}
+              value={`${Math.round(
+                dashboardData.summary.memoryMb
+              )} MB`}
               subtitle="Current Usage"
               color="#f59e0b"
             />
@@ -102,44 +168,125 @@ const Dashboard = () => {
               subtitle="Total Alerts"
               color="#ef4444"
             />
+
             <MetricCard
               title="Restart Count"
-              value={dashboardData.summary?.podDetails?.restartCount || 0}
+              value={
+                dashboardData.summary?.podDetails
+                  ?.restartCount || 0
+              }
               subtitle="Last 24h"
               color="#3b82f6"
             />
 
-            <MetricCard
-              title="Last AI Action"
-              value={
-                latestDecision?.action?.replaceAll("_", " ")?.toUpperCase() ||
-                "N/A"
-              }
-              subtitle="Latest Decision"
-              color="#22c55e"
+            <HealthScoreCard
+              healthScore={healthScore}
+            />
+
+          </div>
+
+          {/* AI Recommendation */}
+
+          <RecommendationCard
+            decision={latestDecision}
+          />
+
+          {/* Root Cause + Forecast */}
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "20px",
+              marginTop: "20px",
+              marginBottom: "20px"
+            }}
+          >
+            <RootCauseCard
+              data={rootCause}
+            />
+
+            <ForecastCard
+              forecast={forecast}
             />
           </div>
 
-          <RecommendationCard decision={latestDecision} />
+          {/* Anomaly Detection */}
 
-         <div className="charts-grid">
-  <CpuChart metricsHistory={dashboardData.metricsHistory} />
+          <div
+            style={{
+              marginBottom: "20px"
+            }}
+          >
+            <AnomalyCard
+              anomalies={anomalies}
+            />
+          </div>
 
-  <MemoryChart metricsHistory={dashboardData.metricsHistory} />
+          {/* Executive Summary */}
 
-  <RecentAlerts alerts={dashboardData.alerts} />
-</div>
+          <div
+            style={{
+              marginBottom: "20px"
+            }}
+          >
+            <ExecutiveSummaryCard
+              summary={executiveSummary}
+            />
+          </div>
 
-        <div className="bottom-grid">
-  <AIDecisions decisions={dashboardData.aiDecisions} />
+          {/* Charts */}
 
+          <div className="charts-grid">
 
-  <ScalingHistory history={dashboardData.scalingHistory} />
+            <CpuChart
+              metricsHistory={
+                dashboardData.metricsHistory
+              }
+            />
 
-  <SystemHealth health={dashboardData.health} />
-</div>
+            <MemoryChart
+              metricsHistory={
+                dashboardData.metricsHistory
+              }
+            />
+
+            <RecentAlerts
+              alerts={dashboardData.alerts}
+            />
+
+          </div>
+
+          {/* Bottom Grid */}
+
+          <div className="bottom-grid">
+
+            <AIDecisions
+              decisions={
+                dashboardData.aiDecisions
+              }
+            />
+
+            <ScalingHistory
+              history={
+                dashboardData.scalingHistory
+              }
+            />
+
+            <SystemHealth
+              health={
+                dashboardData.health
+              }
+            />
+
+          </div>
+
         </div>
+
       </div>
+
+      <AIOpsAssistant />
+
     </div>
   );
 };

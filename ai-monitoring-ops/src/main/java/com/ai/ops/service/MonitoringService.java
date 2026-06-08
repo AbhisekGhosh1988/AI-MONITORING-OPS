@@ -49,8 +49,8 @@ public class MonitoringService {
             int restartCount = (int) prometheusService.
                     query("sum(kube_pod_container_status_restarts_total{" + "pod=~\"order-service.*\"" + "})");
 
-            double cpuPercent = prometheusService.
-                    query("sum(rate(container_cpu_usage_seconds_total{" + "pod=~\"order-service.*\"" + "}[5m])) * 100");
+            double cpuPercent = prometheusService.getOrderServiceCpu();
+
             double memoryBytes = prometheusService.
                             query("sum(container_memory_working_set_bytes{" + "pod=~\"order-service.*\"" + "})");
 
@@ -78,7 +78,9 @@ public class MonitoringService {
             AIDecision decision = AiResponseParser.parse(aiResponse);
             log.info("Parsed AI Decision: {}", objectMapper.writeValueAsString(decision));
             aiAuditService.saveDecision(decision.getAction(), decision.getReplicas(),
-                    decision.getReason(), decision.getConfidence(), false);
+                    decision.getReason(), decision.getConfidence(),
+                    decision.getReasons() == null ? "" :
+                            String.join("\n", decision.getReasons()), false);
 
             executeDecision(decision);
             updatePreviousMetrics(cpuPercent, memoryMb, restartCount, (int) runningPods);
@@ -112,7 +114,8 @@ public class MonitoringService {
 
                     if (scaled) {
                         aiAuditService.saveDecision(decision.getAction(), replicas,
-                                decision.getReason(), decision.getConfidence(), true);
+                                decision.getReason(), decision.getConfidence(), decision.getReasons() == null ? "" :
+                                        String.join("\n", decision.getReasons()), true);
                         autoScalingService.addScalingEvent("SCALE_UP", replicas,
                                 decision.getReason());
                         alertService.createAlert("HIGH", decision.getReason());
@@ -132,7 +135,8 @@ public class MonitoringService {
 
                     if (scaled) {
                         aiAuditService.saveDecision(decision.getAction(), replicas,
-                                decision.getReason(), decision.getConfidence(), true);
+                                decision.getReason(), decision.getConfidence(),  decision.getReasons() == null ? "" :
+                                        String.join("\n", decision.getReasons()), true);
                         autoScalingService.addScalingEvent("SCALE_DOWN", replicas, decision.getReason());
                         alertService.createAlert("MEDIUM", decision.getReason());
                     }

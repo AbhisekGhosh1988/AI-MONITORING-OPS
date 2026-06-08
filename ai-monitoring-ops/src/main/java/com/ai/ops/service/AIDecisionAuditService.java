@@ -15,11 +15,13 @@ public class AIDecisionAuditService {
     private final AIDecisionRepository repository;
 
     public void saveDecision(String action, Integer replicas, String reason,
-                             Double confidence, boolean executed){
+                             Integer confidence, String aiExplanation, boolean executed) {
 
-        repository.save(AIDecisionEntity.builder().createdAt(LocalDateTime.now()).
-                action(action).replicas(replicas).reason(reason).executed(executed).
-                confidence(confidence).build());
+        AIDecisionEntity entity = AIDecisionEntity.builder().action(action).
+                replicas(replicas).reason(reason).confidence(confidence).
+                aiExplanation(aiExplanation).executed(executed).
+                createdAt(LocalDateTime.now()).build();
+        repository.save(entity);
     }
 
     public List<AIDecisionEntity> getAll() {

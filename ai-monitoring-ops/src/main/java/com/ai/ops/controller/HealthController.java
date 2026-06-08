@@ -1,6 +1,7 @@
 package com.ai.ops.controller;
 
 import com.ai.ops.model.HealthResponse;
+import com.ai.ops.model.HealthScoreResponse;
 import com.ai.ops.service.HealthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,5 +18,9 @@ public class HealthController {
     @GetMapping
     public HealthResponse health() {
         return healthService.getHealth();
+    }
+    @GetMapping("/health-score")
+    public HealthScoreResponse getHealthScore() {
+        return healthService.calculate();
     }
 }

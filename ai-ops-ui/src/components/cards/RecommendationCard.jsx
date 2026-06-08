@@ -6,7 +6,7 @@ const RecommendationCard = ({ decision }) => {
   }
 
   const confidence = decision.confidence
-    ? Math.round(decision.confidence * 100)
+    ? Math.round(decision.confidence)
     : 0;
 
   const actionText = decision.action
@@ -88,19 +88,54 @@ const RecommendationCard = ({ decision }) => {
         </div>
 
         <div className="reason-box">
-          <h4>Reason</h4>
 
-          <p>
-            {decision.reason ||
-              "No reason available"}
-          </p>
+  <h4>Reason</h4>
 
-          <h4>Action</h4>
+  <p>
+    {decision.reason ||
+      "No reason available"}
+  </p>
 
-          <p>
-            {actionText || "NO ACTION"}
-          </p>
-        </div>
+  <h4>Decision Factors</h4>
+
+  <ul
+    style={{
+      marginTop: "10px",
+      paddingLeft: "18px",
+      color: "#cbd5e1",
+      lineHeight: "1.8"
+    }}
+  >
+   {
+  decision.aiExplanation
+    ? decision.aiExplanation
+        .split("\n")
+        .map((item, index) => (
+          <li key={index}>
+            {item}
+          </li>
+        ))
+    : (
+      <li>
+        No explainability data
+      </li>
+    )
+}
+  </ul>
+
+  <h4
+    style={{
+      marginTop: "15px"
+    }}
+  >
+    Action
+  </h4>
+
+  <p>
+    {actionText || "NO ACTION"}
+  </p>
+
+</div>
       </div>
     </div>
   );

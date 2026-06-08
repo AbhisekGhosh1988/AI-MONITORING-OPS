@@ -22,4 +22,7 @@ public class ScalingHistoryEntity {
     private Integer replicas;
     @Column(length = 2000)
     private String reason;
+    private Integer confidence;
+    @Column(length = 4000)
+    private String aiExplanation;
 }

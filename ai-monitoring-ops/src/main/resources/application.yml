@@ -30,3 +30,10 @@ langchain4j:
     with-vectors: true
 prometheus:
   url: http://129.159.224.174:9090
+
+aiops:
+  health:
+    cpu-warning: 75
+    cpu-critical: 90
+    memory-warning: 75
+    memory-critical: 90

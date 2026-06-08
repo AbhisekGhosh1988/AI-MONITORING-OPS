@@ -23,5 +23,7 @@ public class AIDecisionEntity {
     @Column(length = 2000)
     private String reason;
     private Boolean executed;
-    private Double confidence;
+    private Integer confidence;
+    @Column(length = 4000)
+    private String aiExplanation;
 }
